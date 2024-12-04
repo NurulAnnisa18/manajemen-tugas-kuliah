@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Tugas Kuliah</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .login-container, .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .login-container h1, .container h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .login-form, .register-form, .input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .login-form input, .register-form input, 
+        .input-container input, 
+        .input-container textarea, 
+        .input-container select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .login-form button, .register-form button, 
+        .container button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+
+        .login-form button:hover, .register-form button:hover, 
+        .container button:hover {
+            background-color: #2980b9;
+        }
+
+        .toggle-form {
+            text-align: center;
+            margin-top: 15px;
+            color: #3498db;
+            cursor: pointer;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        /* Sisanya sama seperti CSS sebelumnya */
+    </style>
+</head>
+<body>
+    <div id="loginPage" class="login-container">
+        <div id="loginFormContainer">
+            <h1>Login Manajemen Tugas</h1>
+            <form id="loginForm" class="login-form">
+                <input type="email" id="loginEmailInput" placeholder="Email" required>
+                <input type="password" id="loginPasswordInput" placeholder="Password" required>
+                <div id="loginErrorMessage" class="error-message"></div>
+                <button type="submit">Login</button>
+            </form>
+            <div class="toggle-form" onclick="toggleForm('register')">Belum punya akun? Daftar</div>
+        </div>
+
+        <div id="registerFormContainer" style="display:none;">
+            <h1>Daftar Akun</h1>
+            <form id="registerForm" class="register-form">
+                <input type="email" id="registerEmailInput" placeholder="Email" required>
+                <input type="password" id="registerPasswordInput" placeholder="Password" required>
+                <input type="password" id="registerConfirmPasswordInput" placeholder="Konfirmasi Password" required>
+                <div id="registerErrorMessage" class="error-message"></div>
+                <button type="submit">Daftar</button>
+            </form>
+            <div class="toggle-form" onclick="toggleForm('login')">Sudah punya akun? Login</div>
+        </div>
+    </div>
+
+    <div id="taskPage" class="container" style="display:none;">
+        <!-- Isi halaman tugas sama seperti sebelumnya -->
+        <h1>Manajemen Tugas Kuliah</h1>
+        
+        <div class="input-container">
+            <!-- Input fields tugas -->
+        </div>
+
+        <ul class="task-list" id="taskList"></ul>
+        
+        <button onclick="logout()" style="background-color: #e74c3c; margin-top: 15px;">Logout</button>
+    </div>
+
+    <script>
+        // Fungsi untuk mengubah form antara login dan register
+        function toggleForm(type) {
+            if (type === 'login') {
+                document.getElementById('loginFormContainer').style.display = 'block';
+                document.getElementById('registerFormContainer').style.display = 'none';
+            } else {
+                document.getElementById('loginFormContainer').style.display = 'none';
+                document.getElementById('registerFormContainer').style.display = 'block';
+            }
+        }
+
+        // Fungsi untuk mendaftarkan akun baru
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('registerEmailInput').value.trim();
+            const password = document.getElementById('registerPasswordInput').value;
+            const confirmPassword = document.getElementById('registerConfirmPasswordInput').value;
+            const errorMessage = document.getElementById('registerErrorMessage');
+
+            // Validasi password
+            if (password !== confirmPassword) {
+                errorMessage.textContent = 'Password tidak cocok';
+                return;
+            }
+
+            // Cek apakah email sudah terdaftar
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const existingUser = users.find(user => user.email === email);
+
+            if (existingUser) {
+                errorMessage.textContent = 'Email sudah terdaftar';
+                return;
+            }
+
+            // Tambahkan user baru
+            const newUser = {
+                email: email,
+                password: btoa(password) // Basic encoding (NOT secure encryption)
+            };
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+
+            // Pindah ke form login
+            toggleForm('login');
+            errorMessage.textContent = '';
+        });
+
+        // Fungsi login
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmailInput').value.trim();
+            const password = document.getElementById('loginPasswordInput').value;
+            const errorMessage = document.getElementById('loginErrorMessage');
+
+            // Cek kredensial
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const user = users.find(u => 
+                u.email === email && u.password === btoa(password)
+            );
+
+            if (user) {
+                // Login berhasil
+                localStorage.setItem('currentUser', email);
+                
+                // Sembunyikan login, tampilkan halaman tugas
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('taskPage').style.display = 'block';
+
+                // Muat tugas
+                loadTasks();
+
+                // Bersihkan error
+                errorMessage.textContent = '';
+            } else {
+                // Login gagal
+                errorMessage.textContent = 'Email atau password salah';
+            }
+        });
+
+        // Fungsi logout (sama seperti sebelumnya)
+        function logout() {
+            localStorage.removeItem('currentUser');
+            document.getElementById('taskPage').style.display = 'none';
+            document.getElementById('loginPage').style.display = 'block';
+            document.getElementById('loginFormContainer').style.display = 'block';
+            document.getElementById('registerFormContainer').style.display = 'none';
+        }
+
+        // Fungsi loadTasks (sama seperti sebelumnya)
+        function loadTasks() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (!currentUser) {
+                document.getElementById('loginPage').style.display = 'block';
+                document.getElementById('taskPage').style.display = 'none';
+                return;
+            }
+
+            // Sisa kode loadTasks tetap sama seperti versi sebelumnya
+            tasks = JSON.parse(localStorage.getItem(`tasks_${currentUser}`) || '[]');
+            
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+            
+            // Render tasks (gunakan kode rendering dari versi sebelumnya)
+            tasks.forEach(task => {
+                // Kode rendering task
+            });
+        }
+
+        // Panggil loadTasks saat halaman dimuat
+        loadTasks();
+    </script>
+</body>
+</html>
